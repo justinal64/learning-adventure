@@ -11,6 +11,14 @@ interface GameObject {
   glowRadius?: number;
 }
 
+interface TouchInfo {
+  isDragging: boolean;
+  startX: number;
+  startY: number;
+  lastX: number;
+  lastY: number;
+}
+
 const SpaceGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -19,7 +27,15 @@ const SpaceGame: React.FC = () => {
   const [highScore, setHighScore] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(true);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const touchRef = useRef<TouchInfo>({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0
+  });
 
   // Game state
   const gameState = useRef({
@@ -33,7 +49,8 @@ const SpaceGame: React.FC = () => {
       asteroid: new Image(),
       powerup: new Image()
     },
-    collisionEffects: [] as { x: number; y: number; radius: number; alpha: number }[]
+    collisionEffects: [] as { x: number; y: number; radius: number; alpha: number }[],
+    touchFeedback: { active: false, x: 0, y: 0, radius: 30, alpha: 0.3 }
   });
 
   // Load images and audio
@@ -289,7 +306,7 @@ const SpaceGame: React.FC = () => {
   const drawGame = (ctx: CanvasRenderingContext2D) => {
     if (!imagesLoaded) return;
 
-    const { ship, asteroids, powerups, collisionEffects, images } = gameState.current;
+    const { ship, asteroids, powerups, collisionEffects, images, touchFeedback } = gameState.current;
 
     try {
       // Draw glow effects
@@ -341,6 +358,27 @@ const SpaceGame: React.FC = () => {
         ctx.fill();
       });
 
+      // Draw touch feedback if active
+      if (touchFeedback.active) {
+        ctx.beginPath();
+        ctx.arc(touchFeedback.x, touchFeedback.y, touchFeedback.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${touchFeedback.alpha})`;
+        ctx.fill();
+      }
+
+      // Draw tutorial overlay
+      if (showTutorial && !gameOver && gameStarted) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Touch and drag to move', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        ctx.font = '18px Arial';
+        ctx.fillText('Tap anywhere to begin', ctx.canvas.width / 2, ctx.canvas.height / 2 + 40);
+      }
+
       // Draw score with shadow
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
       ctx.shadowBlur = 5;
@@ -385,6 +423,79 @@ const SpaceGame: React.FC = () => {
     };
   }, []);
 
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    touchRef.current = {
+      isDragging: true,
+      startX: x,
+      startY: y,
+      lastX: x,
+      lastY: y
+    };
+
+    // Show touch feedback
+    gameState.current.touchFeedback = {
+      active: true,
+      x,
+      y,
+      radius: 30,
+      alpha: 0.3
+    };
+
+    // Hide tutorial after first touch
+    setShowTutorial(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (!touchRef.current.isDragging) return;
+
+    const touch = e.touches[0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    // Calculate movement delta
+    const deltaX = x - touchRef.current.lastX;
+    const deltaY = y - touchRef.current.lastY;
+
+    // Update ship position with smooth movement
+    const { ship } = gameState.current;
+    const sensitivity = 1.2; // Adjust for children's fingers
+    
+    ship.x = Math.max(0, Math.min(canvas.width - ship.width, ship.x + deltaX * sensitivity));
+    ship.y = Math.max(0, Math.min(canvas.height - ship.height, ship.y + deltaY * sensitivity));
+
+    // Update touch feedback position
+    gameState.current.touchFeedback = {
+      ...gameState.current.touchFeedback,
+      x,
+      y
+    };
+
+    // Update last position
+    touchRef.current.lastX = x;
+    touchRef.current.lastY = y;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    touchRef.current.isDragging = false;
+    gameState.current.touchFeedback.active = false;
+  };
+
   return (
     <div className="bg-gray-900 rounded-xl p-6">
       <div className="flex flex-col items-center">
@@ -392,7 +503,10 @@ const SpaceGame: React.FC = () => {
           ref={canvasRef}
           width={600}
           height={400}
-          className="bg-black rounded-lg mb-4 shadow-xl"
+          className="bg-black rounded-lg mb-4 shadow-xl touch-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         />
         
         {loadError && (
