@@ -15,6 +15,7 @@ const SpaceGame: React.FC = () => {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [highScore, setHighScore] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   // Game state
   const gameState = useRef({
@@ -23,27 +24,46 @@ const SpaceGame: React.FC = () => {
     powerups: [] as GameObject[],
     keys: { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false },
     animationFrame: 0,
+    images: {
+      ship: new Image(),
+      asteroid: new Image(),
+      powerup: new Image()
+    }
   });
 
   // Load images
   useEffect(() => {
-    const shipImg = new Image();
-    const asteroidImg = new Image();
-    const powerupImg = new Image();
-    
-    shipImg.src = 'https://assets.codepen.io/123456/spaceship.png';
-    asteroidImg.src = 'https://assets.codepen.io/123456/asteroid.png';
-    powerupImg.src = 'https://assets.codepen.io/123456/powerup.png';
+    let loadedImages = 0;
+    const totalImages = 3;
 
-    gameState.current.images = {
-      ship: shipImg,
-      asteroid: asteroidImg,
-      powerup: powerupImg,
+    const onImageLoad = () => {
+      loadedImages++;
+      if (loadedImages === totalImages) {
+        setImagesLoaded(true);
+      }
+    };
+
+    const { images } = gameState.current;
+    
+    images.ship.onload = onImageLoad;
+    images.asteroid.onload = onImageLoad;
+    images.powerup.onload = onImageLoad;
+
+    images.ship.src = 'https://assets.codepen.io/123456/spaceship.png';
+    images.asteroid.src = 'https://assets.codepen.io/123456/asteroid.png';
+    images.powerup.src = 'https://assets.codepen.io/123456/powerup.png';
+
+    return () => {
+      images.ship.onload = null;
+      images.asteroid.onload = null;
+      images.powerup.onload = null;
     };
   }, []);
 
   // Game initialization
   const initGame = () => {
+    if (!imagesLoaded) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -188,26 +208,22 @@ const SpaceGame: React.FC = () => {
 
   // Draw game objects
   const drawGame = (ctx: CanvasRenderingContext2D) => {
+    if (!imagesLoaded) return;
+
     const { ship, asteroids, powerups, images } = gameState.current;
 
     // Draw ship
-    if (images?.ship) {
-      ctx.drawImage(images.ship, ship.x, ship.y, ship.width, ship.height);
-    }
+    ctx.drawImage(images.ship, ship.x, ship.y, ship.width, ship.height);
 
     // Draw asteroids
-    if (images?.asteroid) {
-      asteroids.forEach(asteroid => {
-        ctx.drawImage(images.asteroid, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
-      });
-    }
+    asteroids.forEach(asteroid => {
+      ctx.drawImage(images.asteroid, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
+    });
 
     // Draw powerups
-    if (images?.powerup) {
-      powerups.forEach(powerup => {
-        ctx.drawImage(images.powerup, powerup.x, powerup.y, powerup.width, powerup.height);
-      });
-    }
+    powerups.forEach(powerup => {
+      ctx.drawImage(images.powerup, powerup.x, powerup.y, powerup.width, powerup.height);
+    });
 
     // Draw score
     ctx.fillStyle = 'white';
@@ -264,9 +280,14 @@ const SpaceGame: React.FC = () => {
             </p>
             <button
               onClick={initGame}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition"
+              disabled={!imagesLoaded}
+              className={`px-6 py-2 rounded-lg font-bold transition ${
+                imagesLoaded 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              Start Game
+              {imagesLoaded ? 'Start Game' : 'Loading...'}
             </button>
           </div>
         )}
@@ -278,9 +299,14 @@ const SpaceGame: React.FC = () => {
             <p className="text-gray-300 mb-4">High Score: {highScore}</p>
             <button
               onClick={initGame}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition"
+              disabled={!imagesLoaded}
+              className={`px-6 py-2 rounded-lg font-bold transition ${
+                imagesLoaded 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              Play Again
+              {imagesLoaded ? 'Play Again' : 'Loading...'}
             </button>
           </div>
         )}
