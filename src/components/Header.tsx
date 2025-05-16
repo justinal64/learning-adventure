@@ -63,12 +63,12 @@ const Header: React.FC = () => {
               <button className="px-4 py-2 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold transition-all transform hover:scale-105">
                 Special Areas
               </button>
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                 {specialLinks.map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`block px-4 py-2 ${link.color} text-white rounded-lg my-2 mx-2 text-center font-bold`}
+                    className={`block px-6 py-3 ${link.color} text-white rounded-lg my-2 mx-2 text-center font-bold whitespace-nowrap`}
                   >
                     {link.title}
                   </Link>
@@ -81,7 +81,7 @@ const Header: React.FC = () => {
           <div className="hidden md:flex items-center space-x-2">
             <Link
               to="/progress"
-              className="flex items-center gap-1 px-3 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all"
+              className="flex items-center gap-1 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all"
             >
               <Award size={18} />
               <span>Progress</span>
@@ -93,7 +93,7 @@ const Header: React.FC = () => {
             </Link>
             <Link
               to="/resources"
-              className="flex items-center gap-1 px-3 py-2 rounded-full bg-gray-600 hover:bg-gray-700 text-white font-bold transition-all"
+              className="flex items-center gap-1 px-4 py-2 rounded-full bg-gray-600 hover:bg-gray-700 text-white font-bold transition-all"
             >
               <User size={18} />
               <span>Parents</span>

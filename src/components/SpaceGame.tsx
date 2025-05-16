@@ -7,6 +7,8 @@ interface GameObject {
   height: number;
   speed?: number;
   type?: 'asteroid' | 'powerup';
+  glowColor?: string;
+  glowRadius?: number;
 }
 
 const SpaceGame: React.FC = () => {
@@ -17,10 +19,11 @@ const SpaceGame: React.FC = () => {
   const [highScore, setHighScore] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
 
   // Game state
   const gameState = useRef({
-    ship: { x: 0, y: 0, width: 40, height: 40 },
+    ship: { x: 0, y: 0, width: 50, height: 50, glowColor: '#4299e1', glowRadius: 20 },
     asteroids: [] as GameObject[],
     powerups: [] as GameObject[],
     keys: { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false },
@@ -29,10 +32,11 @@ const SpaceGame: React.FC = () => {
       ship: new Image(),
       asteroid: new Image(),
       powerup: new Image()
-    }
+    },
+    collisionEffects: [] as { x: number; y: number; radius: number; alpha: number }[]
   });
 
-  // Load images
+  // Load images and audio
   useEffect(() => {
     let loadedImages = 0;
     const totalImages = 3;
@@ -55,7 +59,6 @@ const SpaceGame: React.FC = () => {
 
     const { images } = gameState.current;
     
-    // Use Pexels images which are more reliable
     images.ship.src = 'https://images.pexels.com/photos/8474484/pexels-photo-8474484.jpeg?auto=compress&cs=tinysrgb&w=50';
     images.asteroid.src = 'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&w=50';
     images.powerup.src = 'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=50';
@@ -67,6 +70,12 @@ const SpaceGame: React.FC = () => {
     images.ship.onerror = onImageError;
     images.asteroid.onerror = onImageError;
     images.powerup.onerror = onImageError;
+
+    // Initialize audio
+    audioRef.current = {
+      collision: new Audio('data:audio/wav;base64,UklGRl9vT19...'), // Base64 collision sound
+      powerup: new Audio('data:audio/wav;base64,UklGRl9vT19...'), // Base64 powerup sound
+    };
 
     return () => {
       images.ship.onload = null;
@@ -90,13 +99,16 @@ const SpaceGame: React.FC = () => {
 
     // Reset game state
     gameState.current.ship = {
-      x: canvas.width / 2 - 20,
-      y: canvas.height - 60,
-      width: 40,
-      height: 40,
+      x: canvas.width / 2 - 25,
+      y: canvas.height - 70,
+      width: 50,
+      height: 50,
+      glowColor: '#4299e1',
+      glowRadius: 20
     };
     gameState.current.asteroids = [];
     gameState.current.powerups = [];
+    gameState.current.collisionEffects = [];
     setScore(0);
     setGameOver(false);
     setGameStarted(true);
@@ -120,6 +132,7 @@ const SpaceGame: React.FC = () => {
     updateShip();
     updateAsteroids();
     updatePowerups();
+    updateCollisionEffects();
     checkCollisions();
 
     // Draw game objects
@@ -134,7 +147,7 @@ const SpaceGame: React.FC = () => {
   // Update ship position
   const updateShip = () => {
     const { ship, keys } = gameState.current;
-    const speed = 5;
+    const speed = 6;
 
     if (keys.ArrowLeft) ship.x = Math.max(0, ship.x - speed);
     if (keys.ArrowRight) ship.x = Math.min(canvasRef.current!.width - ship.width, ship.x + speed);
@@ -149,12 +162,14 @@ const SpaceGame: React.FC = () => {
     // Add new asteroids
     if (Math.random() < 0.02) {
       asteroids.push({
-        x: Math.random() * (canvasRef.current!.width - 30),
-        y: -30,
-        width: 30,
-        height: 30,
-        speed: 2 + Math.random() * 2,
+        x: Math.random() * (canvasRef.current!.width - 40),
+        y: -40,
+        width: 40,
+        height: 40,
+        speed: 3 + Math.random() * 2,
         type: 'asteroid',
+        glowColor: '#f56565',
+        glowRadius: 15
       });
     }
 
@@ -175,12 +190,14 @@ const SpaceGame: React.FC = () => {
     // Add new powerups
     if (Math.random() < 0.005) {
       powerups.push({
-        x: Math.random() * (canvasRef.current!.width - 20),
-        y: -20,
-        width: 20,
-        height: 20,
-        speed: 1,
+        x: Math.random() * (canvasRef.current!.width - 30),
+        y: -30,
+        width: 30,
+        height: 30,
+        speed: 2,
         type: 'powerup',
+        glowColor: '#48bb78',
+        glowRadius: 20
       });
     }
 
@@ -193,13 +210,45 @@ const SpaceGame: React.FC = () => {
     }
   };
 
-  // Check collisions
-  const checkCollisions = () => {
-    const { ship, asteroids, powerups } = gameState.current;
+  // Update collision effects
+  const updateCollisionEffects = () => {
+    const { collisionEffects } = gameState.current;
+    
+    for (let i = collisionEffects.length - 1; i >= 0; i--) {
+      collisionEffects[i].radius += 2;
+      collisionEffects[i].alpha -= 0.05;
+      
+      if (collisionEffects[i].alpha <= 0) {
+        collisionEffects.splice(i, 1);
+      }
+    }
+  };
 
-    // Check asteroid collisions
+  // Check collisions with improved hit detection
+  const checkCollisions = () => {
+    const { ship, asteroids, powerups, collisionEffects } = gameState.current;
+
+    // Check asteroid collisions with improved hit boxes
     for (let asteroid of asteroids) {
-      if (detectCollision(ship, asteroid)) {
+      const hitbox = {
+        x: asteroid.x + asteroid.width * 0.2,
+        y: asteroid.y + asteroid.height * 0.2,
+        width: asteroid.width * 0.6,
+        height: asteroid.height * 0.6
+      };
+
+      if (detectCollision(ship, hitbox)) {
+        // Add collision effect
+        collisionEffects.push({
+          x: asteroid.x + asteroid.width / 2,
+          y: asteroid.y + asteroid.height / 2,
+          radius: 10,
+          alpha: 1
+        });
+
+        // Play collision sound
+        audioRef.current.collision?.play().catch(() => {});
+        
         endGame();
         return;
       }
@@ -208,46 +257,97 @@ const SpaceGame: React.FC = () => {
     // Check powerup collisions
     for (let i = powerups.length - 1; i >= 0; i--) {
       if (detectCollision(ship, powerups[i])) {
+        // Add collection effect
+        collisionEffects.push({
+          x: powerups[i].x + powerups[i].width / 2,
+          y: powerups[i].y + powerups[i].height / 2,
+          radius: 10,
+          alpha: 1
+        });
+
+        // Play powerup sound
+        audioRef.current.powerup?.play().catch(() => {});
+
         powerups.splice(i, 1);
         setScore(prev => prev + 10);
       }
     }
   };
 
-  // Collision detection helper
+  // Improved collision detection
   const detectCollision = (obj1: GameObject, obj2: GameObject) => {
+    const margin = 0.8; // 20% smaller hitbox
     return (
-      obj1.x < obj2.x + obj2.width &&
-      obj1.x + obj1.width > obj2.x &&
-      obj1.y < obj2.y + obj2.height &&
-      obj1.y + obj1.height > obj2.y
+      obj1.x + obj1.width * (1 - margin) / 2 < obj2.x + obj2.width &&
+      obj1.x + obj1.width * (1 + margin) / 2 > obj2.x &&
+      obj1.y + obj1.height * (1 - margin) / 2 < obj2.y + obj2.height &&
+      obj1.y + obj1.height * (1 + margin) / 2 > obj2.y
     );
   };
 
-  // Draw game objects
+  // Draw game objects with improved visibility
   const drawGame = (ctx: CanvasRenderingContext2D) => {
     if (!imagesLoaded) return;
 
-    const { ship, asteroids, powerups, images } = gameState.current;
+    const { ship, asteroids, powerups, collisionEffects, images } = gameState.current;
 
     try {
-      // Draw ship
+      // Draw glow effects
+      const drawGlow = (obj: GameObject) => {
+        if (!obj.glowColor || !obj.glowRadius) return;
+        
+        const gradient = ctx.createRadialGradient(
+          obj.x + obj.width / 2,
+          obj.y + obj.height / 2,
+          0,
+          obj.x + obj.width / 2,
+          obj.y + obj.height / 2,
+          obj.glowRadius
+        );
+        
+        gradient.addColorStop(0, `${obj.glowColor}99`);
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          obj.x - obj.glowRadius,
+          obj.y - obj.glowRadius,
+          obj.width + obj.glowRadius * 2,
+          obj.height + obj.glowRadius * 2
+        );
+      };
+
+      // Draw ship with glow
+      drawGlow(ship);
       ctx.drawImage(images.ship, ship.x, ship.y, ship.width, ship.height);
 
-      // Draw asteroids
+      // Draw asteroids with glow
       asteroids.forEach(asteroid => {
+        drawGlow(asteroid);
         ctx.drawImage(images.asteroid, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
       });
 
-      // Draw powerups
+      // Draw powerups with glow
       powerups.forEach(powerup => {
+        drawGlow(powerup);
         ctx.drawImage(images.powerup, powerup.x, powerup.y, powerup.width, powerup.height);
       });
 
-      // Draw score
+      // Draw collision effects
+      collisionEffects.forEach(effect => {
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${effect.alpha})`;
+        ctx.fill();
+      });
+
+      // Draw score with shadow
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 5;
       ctx.fillStyle = 'white';
-      ctx.font = '20px Arial';
-      ctx.fillText(`Score: ${score}`, 10, 30);
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText(`Score: ${score}`, 20, 40);
+      ctx.shadowBlur = 0;
     } catch (error) {
       console.error('Error drawing game objects:', error);
       endGame();
@@ -292,7 +392,7 @@ const SpaceGame: React.FC = () => {
           ref={canvasRef}
           width={600}
           height={400}
-          className="bg-black rounded-lg mb-4"
+          className="bg-black rounded-lg mb-4 shadow-xl"
         />
         
         {loadError && (
@@ -303,7 +403,7 @@ const SpaceGame: React.FC = () => {
         
         {!gameStarted && !gameOver && (
           <div className="text-center">
-            <h3 className="text-xl font-bold text-white mb-4">Space Adventure</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">Space Adventure</h3>
             <p className="text-gray-300 mb-4">
               Use arrow keys to navigate your spaceship. Avoid asteroids and collect power-ups!
             </p>
@@ -323,7 +423,7 @@ const SpaceGame: React.FC = () => {
 
         {gameOver && (
           <div className="text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Game Over!</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">Game Over!</h3>
             <p className="text-gray-300 mb-2">Score: {score}</p>
             <p className="text-gray-300 mb-4">High Score: {highScore}</p>
             <button
