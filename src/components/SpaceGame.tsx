@@ -28,6 +28,7 @@ const SpaceGame: React.FC = () => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
+  const [scoreAnimation, setScoreAnimation] = useState({ active: false, value: 0, x: 0, y: 0 });
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const touchRef = useRef<TouchInfo>({
     isDragging: false,
@@ -92,6 +93,7 @@ const SpaceGame: React.FC = () => {
     audioRef.current = {
       collision: new Audio('data:audio/wav;base64,UklGRl9vT19...'), // Base64 collision sound
       powerup: new Audio('data:audio/wav;base64,UklGRl9vT19...'), // Base64 powerup sound
+      score: new Audio('data:audio/wav;base64,UklGRl9vT19...') // Base64 score sound
     };
 
     return () => {
@@ -129,6 +131,7 @@ const SpaceGame: React.FC = () => {
     setScore(0);
     setGameOver(false);
     setGameStarted(true);
+    setScoreAnimation({ active: false, value: 0, x: 0, y: 0 });
 
     // Start game loop
     gameLoop();
@@ -172,7 +175,7 @@ const SpaceGame: React.FC = () => {
     if (keys.ArrowDown) ship.y = Math.min(canvasRef.current!.height - ship.height, ship.y + speed);
   };
 
-  // Update asteroids
+  // Update asteroids with improved scoring
   const updateAsteroids = () => {
     const { asteroids } = gameState.current;
     
@@ -190,12 +193,20 @@ const SpaceGame: React.FC = () => {
       });
     }
 
-    // Move asteroids
+    // Move asteroids and update score
     for (let i = asteroids.length - 1; i >= 0; i--) {
       asteroids[i].y += asteroids[i].speed!;
       if (asteroids[i].y > canvasRef.current!.height) {
         asteroids.splice(i, 1);
+        // Add score animation
+        setScoreAnimation({
+          active: true,
+          value: 1,
+          x: asteroids[i].x,
+          y: asteroids[i].y
+        });
         setScore(prev => prev + 1);
+        audioRef.current.score?.play().catch(() => {});
       }
     }
   };
@@ -241,7 +252,7 @@ const SpaceGame: React.FC = () => {
     }
   };
 
-  // Check collisions with improved hit detection
+  // Check collisions with improved hit detection and scoring
   const checkCollisions = () => {
     const { ship, asteroids, powerups, collisionEffects } = gameState.current;
 
@@ -271,7 +282,7 @@ const SpaceGame: React.FC = () => {
       }
     }
 
-    // Check powerup collisions
+    // Check powerup collisions with score animation
     for (let i = powerups.length - 1; i >= 0; i--) {
       if (detectCollision(ship, powerups[i])) {
         // Add collection effect
@@ -280,6 +291,14 @@ const SpaceGame: React.FC = () => {
           y: powerups[i].y + powerups[i].height / 2,
           radius: 10,
           alpha: 1
+        });
+
+        // Add score animation
+        setScoreAnimation({
+          active: true,
+          value: 10,
+          x: powerups[i].x,
+          y: powerups[i].y
         });
 
         // Play powerup sound
@@ -302,7 +321,7 @@ const SpaceGame: React.FC = () => {
     );
   };
 
-  // Draw game objects with improved visibility
+  // Draw game objects with improved score display
   const drawGame = (ctx: CanvasRenderingContext2D) => {
     if (!imagesLoaded) return;
 
@@ -366,6 +385,21 @@ const SpaceGame: React.FC = () => {
         ctx.fill();
       }
 
+      // Draw score with animation
+      if (scoreAnimation.active) {
+        ctx.save();
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${scoreAnimation.value}`, scoreAnimation.x, scoreAnimation.y);
+        ctx.restore();
+        
+        // Reset score animation after a short delay
+        setTimeout(() => {
+          setScoreAnimation({ active: false, value: 0, x: 0, y: 0 });
+        }, 500);
+      }
+
       // Draw tutorial overlay
       if (showTutorial && !gameOver && gameStarted) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -379,13 +413,21 @@ const SpaceGame: React.FC = () => {
         ctx.fillText('Tap anywhere to begin', ctx.canvas.width / 2, ctx.canvas.height / 2 + 40);
       }
 
-      // Draw score with shadow
+      // Draw score with improved visibility
+      ctx.save();
+      // Draw score background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.roundRect(10, 10, 120, 40, 20);
+      ctx.fill();
+      
+      // Draw score text with shadow
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
       ctx.shadowBlur = 5;
       ctx.fillStyle = 'white';
       ctx.font = 'bold 24px Arial';
-      ctx.fillText(`Score: ${score}`, 20, 40);
-      ctx.shadowBlur = 0;
+      ctx.textAlign = 'left';
+      ctx.fillText(`Score: ${score}`, 20, 38);
+      ctx.restore();
     } catch (error) {
       console.error('Error drawing game objects:', error);
       endGame();
