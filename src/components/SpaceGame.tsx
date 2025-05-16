@@ -16,6 +16,7 @@ const SpaceGame: React.FC = () => {
   const [gameOver, setGameOver] = useState(false);
   const [highScore, setHighScore] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // Game state
   const gameState = useRef({
@@ -35,34 +36,51 @@ const SpaceGame: React.FC = () => {
   useEffect(() => {
     let loadedImages = 0;
     const totalImages = 3;
+    let hasError = false;
 
     const onImageLoad = () => {
+      if (hasError) return;
       loadedImages++;
       if (loadedImages === totalImages) {
         setImagesLoaded(true);
+        setLoadError(false);
       }
+    };
+
+    const onImageError = () => {
+      hasError = true;
+      setLoadError(true);
+      setImagesLoaded(false);
     };
 
     const { images } = gameState.current;
     
+    // Use Pexels images which are more reliable
+    images.ship.src = 'https://images.pexels.com/photos/8474484/pexels-photo-8474484.jpeg?auto=compress&cs=tinysrgb&w=50';
+    images.asteroid.src = 'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&w=50';
+    images.powerup.src = 'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=50';
+
     images.ship.onload = onImageLoad;
     images.asteroid.onload = onImageLoad;
     images.powerup.onload = onImageLoad;
 
-    images.ship.src = 'https://assets.codepen.io/123456/spaceship.png';
-    images.asteroid.src = 'https://assets.codepen.io/123456/asteroid.png';
-    images.powerup.src = 'https://assets.codepen.io/123456/powerup.png';
+    images.ship.onerror = onImageError;
+    images.asteroid.onerror = onImageError;
+    images.powerup.onerror = onImageError;
 
     return () => {
       images.ship.onload = null;
+      images.ship.onerror = null;
       images.asteroid.onload = null;
+      images.asteroid.onerror = null;
       images.powerup.onload = null;
+      images.powerup.onerror = null;
     };
   }, []);
 
   // Game initialization
   const initGame = () => {
-    if (!imagesLoaded) return;
+    if (!imagesLoaded || loadError) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -90,7 +108,7 @@ const SpaceGame: React.FC = () => {
   // Game loop
   const gameLoop = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !imagesLoaded) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -212,23 +230,28 @@ const SpaceGame: React.FC = () => {
 
     const { ship, asteroids, powerups, images } = gameState.current;
 
-    // Draw ship
-    ctx.drawImage(images.ship, ship.x, ship.y, ship.width, ship.height);
+    try {
+      // Draw ship
+      ctx.drawImage(images.ship, ship.x, ship.y, ship.width, ship.height);
 
-    // Draw asteroids
-    asteroids.forEach(asteroid => {
-      ctx.drawImage(images.asteroid, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
-    });
+      // Draw asteroids
+      asteroids.forEach(asteroid => {
+        ctx.drawImage(images.asteroid, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
+      });
 
-    // Draw powerups
-    powerups.forEach(powerup => {
-      ctx.drawImage(images.powerup, powerup.x, powerup.y, powerup.width, powerup.height);
-    });
+      // Draw powerups
+      powerups.forEach(powerup => {
+        ctx.drawImage(images.powerup, powerup.x, powerup.y, powerup.width, powerup.height);
+      });
 
-    // Draw score
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.fillText(`Score: ${score}`, 10, 30);
+      // Draw score
+      ctx.fillStyle = 'white';
+      ctx.font = '20px Arial';
+      ctx.fillText(`Score: ${score}`, 10, 30);
+    } catch (error) {
+      console.error('Error drawing game objects:', error);
+      endGame();
+    }
   };
 
   // End game
@@ -272,6 +295,12 @@ const SpaceGame: React.FC = () => {
           className="bg-black rounded-lg mb-4"
         />
         
+        {loadError && (
+          <div className="text-red-500 mb-4">
+            Failed to load game assets. Please try refreshing the page.
+          </div>
+        )}
+        
         {!gameStarted && !gameOver && (
           <div className="text-center">
             <h3 className="text-xl font-bold text-white mb-4">Space Adventure</h3>
@@ -280,14 +309,14 @@ const SpaceGame: React.FC = () => {
             </p>
             <button
               onClick={initGame}
-              disabled={!imagesLoaded}
+              disabled={!imagesLoaded || loadError}
               className={`px-6 py-2 rounded-lg font-bold transition ${
-                imagesLoaded 
+                imagesLoaded && !loadError
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
               }`}
             >
-              {imagesLoaded ? 'Start Game' : 'Loading...'}
+              {loadError ? 'Error Loading' : imagesLoaded ? 'Start Game' : 'Loading...'}
             </button>
           </div>
         )}
@@ -299,14 +328,14 @@ const SpaceGame: React.FC = () => {
             <p className="text-gray-300 mb-4">High Score: {highScore}</p>
             <button
               onClick={initGame}
-              disabled={!imagesLoaded}
+              disabled={!imagesLoaded || loadError}
               className={`px-6 py-2 rounded-lg font-bold transition ${
-                imagesLoaded 
+                imagesLoaded && !loadError
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
               }`}
             >
-              {imagesLoaded ? 'Play Again' : 'Loading...'}
+              {loadError ? 'Error Loading' : imagesLoaded ? 'Play Again' : 'Loading...'}
             </button>
           </div>
         )}
