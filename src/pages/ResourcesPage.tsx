@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, FileText, Book, Calendar, Download } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
+import HandwritingWorksheet from '../components/HandwritingWorksheet';
 
 const ResourcesPage: React.FC = () => {
+  const [activeWorksheet, setActiveWorksheet] = useState<'alphabet' | 'words' | 'sentences'>('alphabet');
+  
   const worksheets = [
     {
       title: "Multiplication Tables (1-10)",
@@ -104,6 +107,62 @@ const ResourcesPage: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+      
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Cursive Writing Practice</h2>
+        <div className="bg-gray-100 rounded-xl p-6">
+          <div className="flex gap-4 mb-6">
+            <button 
+              onClick={() => setActiveWorksheet('alphabet')}
+              className={`px-4 py-2 rounded-lg font-bold transition ${
+                activeWorksheet === 'alphabet' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Alphabet Practice
+            </button>
+            <button 
+              onClick={() => setActiveWorksheet('words')}
+              className={`px-4 py-2 rounded-lg font-bold transition ${
+                activeWorksheet === 'words' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Word Practice
+            </button>
+            <button 
+              onClick={() => setActiveWorksheet('sentences')}
+              className={`px-4 py-2 rounded-lg font-bold transition ${
+                activeWorksheet === 'sentences' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Sentence Practice
+            </button>
+          </div>
+          
+          <HandwritingWorksheet 
+            title={
+              activeWorksheet === 'alphabet' 
+                ? 'Cursive Alphabet Practice' 
+                : activeWorksheet === 'words'
+                ? 'Common Words Practice'
+                : 'Sentence Writing Practice'
+            }
+            instructions={
+              activeWorksheet === 'alphabet'
+                ? 'Practice writing uppercase and lowercase letters in cursive. Start at the dot and follow the arrows.'
+                : activeWorksheet === 'words'
+                ? 'Practice writing common words in cursive. Trace the dotted letters, then write on your own.'
+                : 'Practice writing complete sentences in cursive. Start with tracing, then write independently.'
+            }
+            type={activeWorksheet}
+          />
         </div>
       </section>
       
