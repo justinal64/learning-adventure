@@ -177,12 +177,15 @@ const SpaceGame: React.FC = () => {
 
   // Update asteroids with improved scoring
   const updateAsteroids = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const { asteroids } = gameState.current;
     
     // Add new asteroids
     if (Math.random() < 0.02) {
       asteroids.push({
-        x: Math.random() * (canvasRef.current!.width - 40),
+        x: Math.random() * (canvas.width - 40),
         y: -40,
         width: 40,
         height: 40,
@@ -195,16 +198,23 @@ const SpaceGame: React.FC = () => {
 
     // Move asteroids and update score
     for (let i = asteroids.length - 1; i >= 0; i--) {
-      asteroids[i].y += asteroids[i].speed!;
-      if (asteroids[i].y > canvasRef.current!.height) {
+      const asteroid = asteroids[i];
+      if (!asteroid) continue;
+
+      asteroid.y += asteroid.speed!;
+      
+      if (asteroid.y > canvas.height) {
+        const { x, y } = asteroid;
         asteroids.splice(i, 1);
+        
         // Add score animation
         setScoreAnimation({
           active: true,
           value: 1,
-          x: asteroids[i].x,
-          y: asteroids[i].y
+          x,
+          y
         });
+        
         setScore(prev => prev + 1);
         audioRef.current.score?.play().catch(() => {});
       }
