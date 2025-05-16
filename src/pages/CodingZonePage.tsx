@@ -1,6 +1,7 @@
 import React from 'react';
 import { Code, PlayCircle, Youtube, Github } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
+import SpaceGame from '../components/SpaceGame';
 
 const CodingZonePage: React.FC = () => {
   const scratchProjects = [
@@ -71,6 +72,26 @@ const CodingZonePage: React.FC = () => {
         color="bg-orange-600"
       />
       
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Space Adventure Game</h2>
+        <div className="bg-gray-800 rounded-xl p-6 shadow-xl">
+          <div className="max-w-3xl mx-auto">
+            <SpaceGame />
+            <div className="mt-6 bg-gray-700 rounded-lg p-4">
+              <h3 className="text-xl font-bold text-white mb-2">How to Play</h3>
+              <ul className="text-gray-300 space-y-2">
+                <li>⬆️ Up Arrow: Move ship up</li>
+                <li>⬇️ Down Arrow: Move ship down</li>
+                <li>⬅️ Left Arrow: Move ship left</li>
+                <li>➡️ Right Arrow: Move ship right</li>
+                <li>🎯 Goal: Avoid asteroids and collect power-ups</li>
+                <li>⭐ Score: +1 point for each asteroid avoided, +10 points for each power-up collected</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="mb-8">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">What is Coding?</h2>
         <div className="bg-white rounded-xl shadow p-6">
