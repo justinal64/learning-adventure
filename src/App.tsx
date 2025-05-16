@@ -11,6 +11,7 @@ import ScienceCornerPage from './pages/ScienceCornerPage';
 import CodingZonePage from './pages/CodingZonePage';
 import ResourcesPage from './pages/ResourcesPage';
 import ProgressPage from './pages/ProgressPage';
+import HistoryHeroesPage from './pages/HistoryHeroesPage';
 import { UserProvider } from './context/UserContext';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
               <Route path="/coding-zone" element={<CodingZonePage />} />
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/history-heroes" element={<HistoryHeroesPage />} />
             </Routes>
           </main>
           <Footer />
