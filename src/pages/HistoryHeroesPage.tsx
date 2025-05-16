@@ -46,7 +46,7 @@ const HistoryHeroesPage: React.FC = () => {
     {
       id: 'cesar-chavez',
       name: 'César Chávez',
-      title: 'Champion of Farm Workers' Rights',
+      title: 'Champion of Farm Workers\' Rights',
       years: '1927-1993',
       photo: 'https://images.pexels.com/photos/6146944/pexels-photo-6146944.jpeg',
       quote: "We cannot seek achievement for ourselves and forget about progress and prosperity for our community.",
