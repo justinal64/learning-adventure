@@ -1,5 +1,5 @@
 import React from 'react';
-import { Microscope, Globe, Leaf, Cog } from 'lucide-react';
+import { Microscope, Globe, Leaf, Cog, Droplets } from 'lucide-react';
 import ActivityCard from '../components/ActivityCard';
 import PageHeader from '../components/PageHeader';
 
@@ -124,42 +124,80 @@ const SciencePage: React.FC = () => {
       </section>
       
       <section className="mt-12 bg-green-50 rounded-xl p-6 border border-green-200">
-        <h2 className="text-2xl font-bold mb-4 text-green-800">
-          Science Experiment of the Week
+        <h2 className="text-2xl font-bold mb-4 text-green-800 flex items-center">
+          <Droplets className="mr-2" /> Earth Science Activity: Erosion in Action
         </h2>
         <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h3 className="text-xl font-bold text-green-700 mb-3">Rainbow in a Jar</h3>
-          <p className="mb-4">
-            Create a colorful density column using household ingredients!
-          </p>
-          
-          <div className="mb-4">
-            <h4 className="font-bold text-gray-800 mb-2">You'll Need:</h4>
-            <ul className="list-disc pl-5 text-gray-700 space-y-1">
-              <li>Clear jar or tall glass</li>
-              <li>Honey or corn syrup</li>
-              <li>Dish soap</li>
-              <li>Water</li>
-              <li>Food coloring</li>
-              <li>Vegetable oil</li>
-              <li>Rubbing alcohol</li>
-            </ul>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-bold text-green-700 mb-3">Water Erosion Explorer</h3>
+              <p className="mb-4 text-gray-700">
+                Discover how water shapes our Earth by creating your own erosion model!
+              </p>
+              
+              <div className="mb-4">
+                <h4 className="font-bold text-gray-800 mb-2">You'll Need:</h4>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                  <li>Aluminum foil pan or plastic container</li>
+                  <li>Soil or sand</li>
+                  <li>Small rocks and pebbles</li>
+                  <li>Water</li>
+                  <li>Watering can or cup with holes</li>
+                  <li>Paper and pencil for observations</li>
+                </ul>
+              </div>
+              
+              <div className="mb-4">
+                <h4 className="font-bold text-gray-800 mb-2">Safety First:</h4>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                  <li>Wear old clothes or an apron</li>
+                  <li>Keep water away from electrical outlets</li>
+                  <li>Clean up spills right away</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-green-50 rounded-lg p-4">
+                <h4 className="font-bold text-green-800 mb-2">Steps:</h4>
+                <ol className="list-decimal pl-5 text-gray-700 space-y-2">
+                  <li>Create a landscape in your container using soil and rocks</li>
+                  <li>Make some hills and valleys</li>
+                  <li>Predict what will happen when it "rains"</li>
+                  <li>Slowly pour water from your watering can</li>
+                  <li>Observe how the water moves the soil</li>
+                  <li>Draw pictures of before and after</li>
+                </ol>
+              </div>
+              
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-bold text-blue-800 mb-2">Think About It:</h4>
+                <ul className="list-disc pl-5 text-gray-700 space-y-2">
+                  <li>Where did the soil move to?</li>
+                  <li>How did the rocks affect water flow?</li>
+                  <li>How is this like real erosion in nature?</li>
+                  <li>What could prevent erosion?</li>
+                </ul>
+              </div>
+              
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h4 className="font-bold text-purple-800 mb-2">Extension Activities:</h4>
+                <ul className="list-disc pl-5 text-gray-700 space-y-2">
+                  <li>Try different types of soil</li>
+                  <li>Add small plants or grass</li>
+                  <li>Create different slope angles</li>
+                  <li>Test erosion prevention methods</li>
+                </ul>
+              </div>
+            </div>
           </div>
           
-          <div className="mb-4">
-            <h4 className="font-bold text-gray-800 mb-2">The Science Behind It:</h4>
-            <p className="text-gray-700">
-              This experiment demonstrates density - how some liquids are heavier than others and will sink 
-              below lighter liquids. Each layer stays separate because of their different densities!
-            </p>
-          </div>
-          
-          <div className="flex justify-center">
+          <div className="mt-6 flex justify-center">
             <a 
               href="#" 
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition flex items-center"
             >
-              See Full Instructions
+              Download Activity Worksheet
             </a>
           </div>
         </div>
